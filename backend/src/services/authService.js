@@ -16,38 +16,23 @@ const loginUser = async (email, password) => {
     throw new ApiError(400, 'Please provide both email and password');
   }
 
-  const user = await User.findOne({ email: email.toLowerCase() });
+  const cleanEmail = email.trim().toLowerCase();
+  const user = await User.findOne({ email: cleanEmail });
+
   if (!user) {
     throw new ApiError(404, 'No ClaimsCare account exists for this email address');
   }
 
-  let isMatch = false;
-  if (user.passwordHash) {
-    isMatch = await user.comparePassword(password);
-  } else {
-    // Older versions persisted `password` outside the current Mongoose schema.
-    // Read it from the raw collection so it can be verified once and migrated safely.
-    const rawUser = await User.collection.findOne({ _id: user._id }, { projection: { password: 1 } });
-    const legacyPassword = rawUser?.password;
-
-    if (typeof legacyPassword === 'string') {
-      const legacyIsHash = /^\$2[aby]\$\d{2}\$/.test(legacyPassword);
-      isMatch = legacyIsHash
-        ? await bcrypt.compare(password, legacyPassword)
-        : legacyPassword === password;
-    }
-
-    if (!isMatch) {
-      throw new ApiError(401, 'Incorrect password. Please try again.');
-    }
-
-    user.passwordHash = await User.hashPassword(password);
-    await user.save();
-    await User.collection.updateOne({ _id: user._id }, { $unset: { password: '' } });
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    throw new ApiError(401, 'Incorrect password. Please verify your credentials.');
   }
 
-  if (!isMatch) {
-    throw new ApiError(401, 'Incorrect password. Please try again.');
+  // Ensure password is migrated to bcrypt hash if it was stored plainly or in legacy field
+  if (!user.passwordHash || !/^\$2[aby]\$\d{2}\$/.test(user.passwordHash)) {
+    user.passwordHash = await User.hashPassword(password);
+    user.password = undefined;
+    await user.save();
   }
 
   const token = generateToken(user);
@@ -60,23 +45,36 @@ const loginUser = async (email, password) => {
       email: user.email,
       role: user.role,
       avatarUrl: user.avatarUrl,
+      phone: user.phone || '',
+      policyNumber: user.policyNumber || '',
     },
   };
 };
 
-const registerUser = async ({ name, email, password, role }) => {
-  const existingUser = await User.findOne({ email: email.toLowerCase() });
+const registerUser = async ({ name, email, password, role, phone, policyNumber }) => {
+  if (!name || !email || !password) {
+    throw new ApiError(400, 'Name, email, and password are required.');
+  }
+
+  if (password.length < 6) {
+    throw new ApiError(400, 'Password must be at least 6 characters long.');
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const existingUser = await User.findOne({ email: cleanEmail });
   if (existingUser) {
-    throw new ApiError(400, 'User with this email already exists');
+    throw new ApiError(400, 'An account with this email address already exists. Please log in.');
   }
 
   const passwordHash = await User.hashPassword(password);
 
   const newUser = await User.create({
-    name,
-    email: email.toLowerCase(),
+    name: name.trim(),
+    email: cleanEmail,
     passwordHash,
-    role: role || 'patient',
+    role: role === 'insurer' ? 'insurer' : 'patient',
+    phone: phone ? phone.trim() : '',
+    policyNumber: policyNumber ? policyNumber.trim() : '',
   });
 
   const token = generateToken(newUser);
@@ -89,6 +87,8 @@ const registerUser = async ({ name, email, password, role }) => {
       email: newUser.email,
       role: newUser.role,
       avatarUrl: newUser.avatarUrl,
+      phone: newUser.phone,
+      policyNumber: newUser.policyNumber,
     },
   };
 };

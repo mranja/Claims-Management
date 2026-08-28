@@ -1,21 +1,27 @@
 # Dependencies
 node_modules/
+backend/node_modules/
+frontend/node_modules/
 
 # Environment files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
+backend/.env
+frontend/.env
+*.env
 
 # Uploads content (keep .gitkeep)
-server/uploads/*
-!server/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # Build artifacts
-client/dist/
-client/build/
-client/.vite/
+dist/
+frontend/dist/
+build/
+.vite/
+frontend/.vite/
 
 # Logs
 npm-debug.log*

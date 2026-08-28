@@ -30,7 +30,7 @@ API.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const currentPath = window.location.pathname;
-      if (currentPath !== '/login') {
+      if (currentPath !== '/login' && currentPath !== '/signup' && currentPath !== '/') {
         localStorage.removeItem('claims_jwt_token');
         localStorage.removeItem('claims_user');
         window.location.href = '/login';
@@ -53,8 +53,10 @@ export const authApi = {
 
 export const usersApi = {
   updateMe: (profile) => API.patch('/users/me', profile),
-  uploadAvatar: (formData) => API.patch('/users/me/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  uploadAvatar: (formData) =>
+    API.patch('/users/me/avatar', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   changePassword: (passwords) => API.patch('/users/me/password', passwords),
+  getAllPatients: () => API.get('/users/patients'),
 };
 
 export const claimsApi = {
@@ -77,6 +79,7 @@ export const claimsApi = {
     if (filters.maxAmount) params.append('maxAmount', filters.maxAmount);
     if (filters.fromDate) params.append('fromDate', filters.fromDate);
     if (filters.toDate) params.append('toDate', filters.toDate);
+    if (filters.riskLevel) params.append('riskLevel', filters.riskLevel);
 
     return API.get(`/claims?${params.toString()}`);
   },
@@ -87,6 +90,24 @@ export const claimsApi = {
   // Insurer update claim status
   updateClaimStatus: (id, statusData) =>
     API.patch(`/claims/${id}/status`, statusData),
+};
+
+export const aiApi = {
+  // Re-run AI intelligence analysis
+  reanalyzeClaim: (claimId) => API.post(`/ai/claims/${claimId}/reanalyze`),
+
+  // Query Policy RAG knowledge base
+  queryPolicyRag: (query, policyCode) => API.post('/ai/policy/query', { query, policyCode }),
+
+  // Manage Policies
+  getPolicies: () => API.get('/ai/policies'),
+  createPolicy: (policyData) => API.post('/ai/policies', policyData),
+
+  // Patient AI Assistant chat
+  patientAssistantChat: (message, claimId) => API.post('/ai/patient-chat', { message, claimId }),
+
+  // Operational analytics
+  getAnalytics: () => API.get('/ai/analytics'),
 };
 
 export default API;

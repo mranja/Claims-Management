@@ -4,7 +4,21 @@ import { claimsApi } from '../../services/api';
 import SidebarLayout from '../../components/SidebarLayout';
 import StatusBadge from '../../components/StatusBadge';
 import DocumentViewer from '../../components/DocumentViewer';
-import { Plus, FileText, DollarSign, Clock, CheckCircle2, RefreshCw, Eye, MessageSquare, AlertCircle } from 'lucide-react';
+import PatientAIChat from '../../components/PatientAIChat';
+import {
+  Plus,
+  FileText,
+  DollarSign,
+  Clock,
+  CheckCircle2,
+  RefreshCw,
+  Eye,
+  MessageSquare,
+  AlertCircle,
+  Sparkles,
+  ShieldCheck,
+  Building2,
+} from 'lucide-react';
 
 const PatientDashboard = () => {
   const [claims, setClaims] = useState([]);
@@ -32,24 +46,32 @@ const PatientDashboard = () => {
   const totalClaims = claims.length;
   const totalClaimedAmount = claims.reduce((sum, c) => sum + (c.claimAmount || 0), 0);
   const totalApprovedAmount = claims.reduce((sum, c) => sum + (c.approvedAmount || 0), 0);
-  const pendingCount = claims.filter((c) => c.status === 'Pending').length;
+  const pendingCount = claims.filter((c) => c.status === 'Pending' || c.status === 'Requires Info').length;
+
+  const latestClaim = claims[0] || null;
 
   return (
     <SidebarLayout title="Claims" breadcrumb="My Claims Queue">
-      <div className="space-y-6">
+      <div className="space-y-6 font-['Manrope',sans-serif]">
         {/* Top Action Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Claims History</h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Precision medical reimbursement tracking and processing status for patients.
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Claims History</h1>
+              <span className="text-[10px] font-bold bg-teal-50 text-[#006d77] border border-teal-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-[#006d77]" />
+                AI-Assisted
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              Precision medical reimbursement tracking and AI-powered document verification.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={fetchClaims}
-              className="p-2.5 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-slate-900 shadow-sm transition-all"
+              className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 shadow-xs transition-all"
               title="Refresh"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -57,7 +79,7 @@ const PatientDashboard = () => {
 
             <Link
               to="/patient/submit"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#005a60] hover:bg-[#00474c] text-white text-xs font-bold rounded-full shadow-md transition-all active:scale-95"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#006d77] hover:bg-[#00535b] text-white text-xs font-bold rounded-xl shadow-sm transition-all active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>Submit New Claim</span>
@@ -67,40 +89,48 @@ const PatientDashboard = () => {
 
         {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Total Submitted</span>
-              <FileText className="w-4 h-4 text-[#005a60]" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+            <div className="space-y-1">
+              <p className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Total Submitted</p>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">{totalClaims}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Submitted medical claims</p>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900">{totalClaims}</p>
-            <p className="text-[11px] text-slate-500">Submitted claims</p>
+            <div className="p-3.5 bg-slate-100 text-[#006d77] rounded-2xl flex-shrink-0">
+              <FileText className="w-6 h-6" />
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Pending Review</span>
-              <Clock className="w-4 h-4 text-amber-500" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+            <div className="space-y-1">
+              <p className="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Pending Review</p>
+              <p className="text-2xl sm:text-3xl font-black text-amber-600 leading-tight">{pendingCount}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Under adjudication</p>
             </div>
-            <p className="text-2xl font-extrabold text-amber-600">{pendingCount}</p>
-            <p className="text-[11px] text-slate-500">Under review</p>
+            <div className="p-3.5 bg-amber-50 text-amber-600 rounded-2xl flex-shrink-0 border border-amber-100">
+              <Clock className="w-6 h-6" />
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Total Requested</span>
-              <DollarSign className="w-4 h-4 text-blue-600" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+            <div className="space-y-1">
+              <p className="text-[11px] font-extrabold text-blue-600 uppercase tracking-wider">Total Requested</p>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">${totalClaimedAmount.toFixed(2)}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Total claimed amount</p>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900">${totalClaimedAmount.toFixed(2)}</p>
-            <p className="text-[11px] text-slate-500">Total claimed amount</p>
+            <div className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl flex-shrink-0 border border-blue-100">
+              <DollarSign className="w-6 h-6" />
+            </div>
           </div>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-1.5">
-            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-              <span>Total Approved</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
+            <div className="space-y-1">
+              <p className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Total Approved</p>
+              <p className="text-2xl sm:text-3xl font-black text-emerald-700 leading-tight">${totalApprovedAmount.toFixed(2)}</p>
+              <p className="text-[11px] text-slate-400 font-medium">Total approved payouts</p>
             </div>
-            <p className="text-2xl font-extrabold text-emerald-700">${totalApprovedAmount.toFixed(2)}</p>
-            <p className="text-[11px] text-slate-500">Total approved payouts</p>
+            <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-2xl flex-shrink-0 border border-emerald-100">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
           </div>
         </div>
 
@@ -111,11 +141,11 @@ const PatientDashboard = () => {
           </div>
         )}
 
-        {/* Claims Table Matching ClaimsCare Table View */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-[#005a60]" />
+        {/* Claims Table */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-[#006d77]" />
               <span>Claims History</span>
             </h2>
             <span className="text-xs font-semibold text-slate-500">Total: {claims.length} records</span>
@@ -123,8 +153,8 @@ const PatientDashboard = () => {
 
           {loading ? (
             <div className="p-12 text-center space-y-3">
-              <div className="w-7 h-7 border-3 border-[#005a60] border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs text-slate-500 font-medium">Fetching claims...</p>
+              <div className="w-8 h-8 border-3 border-[#006d77] border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-xs text-slate-500 font-medium">Fetching claims and AI analysis...</p>
             </div>
           ) : claims.length === 0 ? (
             <div className="p-12 text-center space-y-3">
@@ -135,7 +165,7 @@ const PatientDashboard = () => {
               </p>
               <Link
                 to="/patient/submit"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#005a60] text-white text-xs font-bold rounded-full shadow-sm hover:bg-[#00474c] transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#006d77] text-white text-xs font-bold rounded-xl shadow-sm hover:bg-[#00535b] transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Submit Your First Claim</span>
@@ -144,10 +174,10 @@ const PatientDashboard = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <thead className="bg-[#f7f9fb] text-[10px] font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                   <tr>
                     <th className="px-6 py-3.5">Submission Date</th>
-                    <th className="px-6 py-3.5">Description</th>
+                    <th className="px-6 py-3.5">Clinical Details & Facility</th>
                     <th className="px-6 py-3.5">Claim Amount</th>
                     <th className="px-6 py-3.5">Approved Amount</th>
                     <th className="px-6 py-3.5">Status</th>
@@ -165,12 +195,18 @@ const PatientDashboard = () => {
                         })}
                       </td>
 
-                      <td className="px-6 py-4 max-w-xs">
+                      <td className="px-6 py-4 max-w-sm">
                         <p className="text-slate-900 font-bold truncate">{claim.description}</p>
+                        <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Building2 className="w-3 h-3 text-slate-400" />
+                          <span>{claim.hospitalName || 'City General Medical Center'}</span>
+                        </p>
                         {claim.insurerComments && (
                           <div className="mt-1.5 flex items-start gap-1.5 text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-200">
-                            <MessageSquare className="w-3.5 h-3.5 text-[#005a60] flex-shrink-0 mt-0.5" />
-                            <span><strong className="text-slate-800">Insurer:</strong> {claim.insurerComments}</span>
+                            <MessageSquare className="w-3.5 h-3.5 text-[#006d77] flex-shrink-0 mt-0.5" />
+                            <span>
+                              <strong className="text-slate-800">Insurer:</strong> {claim.insurerComments}
+                            </span>
                           </div>
                         )}
                       </td>
@@ -181,11 +217,11 @@ const PatientDashboard = () => {
 
                       <td className="px-6 py-4 whitespace-nowrap">
                         {claim.approvedAmount !== null && claim.approvedAmount !== undefined ? (
-                          <span className="font-bold text-emerald-700">
+                          <span className="font-bold text-emerald-700 text-sm">
                             ${claim.approvedAmount.toFixed(2)}
                           </span>
                         ) : (
-                          <span className="text-slate-400 text-[11px] italic">Under Review</span>
+                          <span className="text-slate-400 text-[11px] italic">Under Adjudication</span>
                         )}
                       </td>
 
@@ -196,7 +232,7 @@ const PatientDashboard = () => {
                       <td className="px-6 py-4 text-right whitespace-nowrap">
                         <button
                           onClick={() => setSelectedClaimDoc(claim)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#005a60] bg-[#005a60]/10 hover:bg-[#005a60]/20 border border-[#005a60]/30 rounded-xl transition-all"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-[#006d77] bg-[#006d77]/10 hover:bg-[#006d77]/20 border border-[#006d77]/30 rounded-xl transition-all"
                         >
                           <Eye className="w-3.5 h-3.5" />
                           <span>View Doc</span>
@@ -210,6 +246,9 @@ const PatientDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Floating Patient AI Assistant Chat */}
+      <PatientAIChat activeClaim={latestClaim} />
 
       {/* Document View Modal */}
       {selectedClaimDoc && (
